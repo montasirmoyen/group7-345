@@ -1,21 +1,9 @@
-# Next.js template
+# Job Application Tracker
 
-This is a Next.js template with shadcn/ui.
+A web application designed to help users organize their job search by logging company details, application status, and interview dates in one centralized, customizable dashboard. The project features a board for moving applications through stages (like "Applied" to "Interviewing") and a secure, personalized repository for storing tailored resumes and cover letters to each position.
 
-## Adding components
-
-To add components to your app, run the following command:
-
-```bash
-npx shadcn@latest add button
-```
-
-This will place the ui components in the `components` directory.
-
-## Using components
-
-To use the components in your app, import them as follows:
-
-```tsx
-import { Button } from "@/components/ui/button";
-```
+### Developers:
+- Montasir Moyen
+- Andrew Yuen
+- Endi Fejzollari
+- Hirusha Karunaratne
