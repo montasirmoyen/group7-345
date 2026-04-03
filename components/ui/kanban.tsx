@@ -325,23 +325,20 @@ export const KanbanProvider = <
 
 // Demo
 const demoColumns = [
-  { id: "backlog", name: "Backlog" },
-  { id: "todo", name: "To Do" },
-  { id: "in-progress", name: "In Progress" },
-  { id: "done", name: "Done" },
+  { id: "apply", name: "Applied" },
+  { id: "reject", name: "Rejected" },
+  { id: "interview", name: "Interviewing" },
+  { id: "offer", name: "Offer" },
 ]
 
 const initialDemoData = [
-  { id: "1", name: "Research competitors", column: "done" },
-  { id: "2", name: "Define user personas", column: "done" },
-  { id: "3", name: "Create wireframes", column: "in-progress" },
-  { id: "4", name: "Design system setup", column: "in-progress" },
-  { id: "5", name: "Build component library", column: "todo" },
-  { id: "6", name: "Implement authentication", column: "todo" },
-  { id: "7", name: "API integration", column: "todo" },
-  { id: "8", name: "Write documentation", column: "backlog" },
-  { id: "9", name: "Set up CI/CD", column: "backlog" },
-  { id: "10", name: "Performance testing", column: "backlog" },
+  { id: "1", name: "Apple", column: "offer" },
+  { id: "2", name: "Microsoft", column: "offer" },
+  { id: "3", name: "State Street", column: "interview" },
+  { id: "4", name: "Cambridge Associates", column: "interview" },
+  { id: "5", name: "Palantir", column: "reject" },
+  { id: "6", name: "Walmart", column: "apply" },
+  { id: "7", name: "Google", column: "apply" },
 ]
 
 export function KanbanDemo() {
