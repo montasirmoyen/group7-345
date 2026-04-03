@@ -48,7 +48,6 @@ const metrics = [
 export function HeroSection() {
     return (
         <section className="relative isolate overflow-hidden">
-            <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,hsl(var(--primary)/0.24),transparent_45%),radial-gradient(circle_at_80%_20%,hsl(var(--foreground)/0.12),transparent_38%),linear-gradient(to_bottom,hsl(var(--background)),hsl(var(--background)))]" />
             <div className="mx-auto w-full max-w-7xl px-4 pb-18 pt-10 sm:px-6 lg:px-8 lg:pt-14">
                 <div className="grid gap-10 lg:grid-cols-[1.2fr_1fr] lg:items-start">
                     <div className="space-y-6">
