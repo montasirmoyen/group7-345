@@ -56,16 +56,8 @@ interface NavbarProps {
   };
 }
 
-const Navbar = ({
-  logo = {
-    url: "/",
-    icon: <Zap className="size-5 shrink-0" fill="currentColor" />,
-    alt: "Job Application Tracker Logo",
-    title: "Job Application Tracker",
-  },
-  menu = [
-    { title: "Home", url: "#" },
-    {
+{/*
+      {
       title: "Products",
       url: "#",
       items: [
@@ -126,14 +118,21 @@ const Navbar = ({
         },
       ],
     },
+      */}
+
+const Navbar = ({
+  logo = {
+    url: "/",
+    icon: <Zap className="size-5 shrink-0" fill="currentColor" />,
+    alt: "Job Application Tracker Logo",
+    title: "Job Application Tracker",
+  },
+  menu = [
+    { title: "Home", url: "/" },
     {
-      title: "Pricing",
-      url: "#",
-    },
-    {
-      title: "Blog",
-      url: "#",
-    },
+      title: "Dashboard",
+      url: "/dashboard",
+    }
   ],
   auth = {
     login: { title: "Login", url: "#" },
