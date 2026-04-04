@@ -48,6 +48,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { DatePickerInput } from "@/components/ui/date-picker";
 
 type ApplicationStatus = "apply" | "applied" | "interviewing" | "offer" | "rejected";
 
@@ -466,12 +467,11 @@ export function JobApplicationDashboard() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="applicationDate">Application date</Label>
-              <Input
+              <DatePickerInput
+                fieldLabel="Application date"
                 id="applicationDate"
-                type="date"
                 value={form.applicationDate}
-                onChange={(event) => updateField("applicationDate", event.target.value)}
+                onChange={(value) => updateField("applicationDate", value)}
               />
             </div>
             <div className="space-y-2">
