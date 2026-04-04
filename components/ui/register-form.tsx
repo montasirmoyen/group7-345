@@ -88,7 +88,7 @@ const RegisterForm = () => {
       </div>
 
       <Button className='w-full' type='submit'>
-        Sign Up to Job Application Tracker
+        Sign Up
       </Button>
     </form>
   )
