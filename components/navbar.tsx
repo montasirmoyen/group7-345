@@ -24,6 +24,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { ThemeToggle } from "@/components/ui/theme-toggle"
 import { cn } from "@/lib/utils";
 
 interface MenuItem {
@@ -168,6 +169,7 @@ const Navbar = ({
             <Button asChild size="sm">
               <a href={auth.signup.url}>{auth.signup.title}</a>
             </Button>
+            <ThemeToggle />
           </div>
         </nav>
 
@@ -178,6 +180,7 @@ const Navbar = ({
             <a href={logo.url} className="flex items-center gap-2">
               {logo.icon}
             </a>
+            
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="outline" size="icon">
@@ -208,6 +211,7 @@ const Navbar = ({
                     <Button asChild>
                       <a href={auth.signup.url}>{auth.signup.title}</a>
                     </Button>
+                    <ThemeToggle />
                   </div>
                 </div>
               </SheetContent>
