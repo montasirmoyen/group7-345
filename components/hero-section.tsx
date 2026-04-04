@@ -68,13 +68,10 @@ export function HeroSection() {
 
                         <div className="flex flex-wrap items-center gap-3">
                             <Button asChild size="lg">
-                                <Link href="#" className="inline-flex items-center gap-2">
+                                <Link href="/dashboard" className="inline-flex items-center gap-2">
                                     Start tracking smarter
                                     <ArrowRight className="size-4" />
                                 </Link>
-                            </Button>
-                            <Button asChild size="lg" variant="outline">
-                                <Link href="#features">Explore features</Link>
                             </Button>
                         </div>
 
