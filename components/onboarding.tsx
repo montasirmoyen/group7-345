@@ -29,9 +29,15 @@ const items = [
   }
 ]
 
-function OnboardingFeed() {
+type OnboardingFeedProps = {
+  onContinue?: () => void
+  onCancel?: () => void
+}
+
+function OnboardingFeed({ onContinue, onCancel }: OnboardingFeedProps) {
   const [active, setActive] = useState<string>('item-1')
   const [completed, setCompleted] = useState<Set<number>>(new Set())
+  const isAllCompleted = completed.size === items.length
 
   const handleOpenChange = (val: string) => {
     setActive(val)
@@ -101,10 +107,15 @@ function OnboardingFeed() {
           })}
         </Accordion>
         <div className='flex justify-end gap-2'>
-          <Button className='flex-1 max-sm:w-full' variant='outline'>
+          <Button className='flex-1 max-sm:w-full' variant='outline' onClick={onCancel}>
             Cancel
           </Button>
-          <Button className='flex-1 max-sm:w-full' type='submit'>
+          <Button
+            className='flex-1 max-sm:w-full'
+            type='button'
+            onClick={onContinue}
+            disabled={!isAllCompleted}
+          >
             Continue
           </Button>
         </div>
