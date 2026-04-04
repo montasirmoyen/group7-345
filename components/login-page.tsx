@@ -10,7 +10,7 @@ const Login = () => {
             <Card className='z-1 w-full border-none shadow-md sm:max-w-lg'>
                 <CardHeader className='gap-6'>
                     <div>
-                        <CardTitle className='mb-1.5 text-2xl'>Log in to Job Application Tracker</CardTitle>
+                        <CardTitle className='mb-1.5 text-2xl'>Log In to Job Application Tracker</CardTitle>
                     </div>
                 </CardHeader>
 
