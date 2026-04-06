@@ -95,6 +95,7 @@ const Navbar = ({
 
   const handleSignOut = async () => {
     await signOut();
+    // Use Next.js router to avoid a full page reload (maintains SPA state)
     router.push("/");
   };
 
