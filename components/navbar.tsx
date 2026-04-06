@@ -1,6 +1,6 @@
 "use client";
 
-import { Book, Menu, Sunset, Trees, Zap } from "lucide-react";
+import { Menu, Zap, LogOut, User } from "lucide-react";
 
 import {
   Accordion,
@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/sheet";
 import { ThemeToggle } from "@/components/ui/theme-toggle"
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/auth-context";
 
 interface MenuItem {
   title: string;
@@ -33,6 +34,7 @@ interface MenuItem {
   description?: string;
   icon?: React.ReactNode;
   items?: MenuItem[];
+  authRequired?: boolean;
 }
 
 interface NavbarProps {
@@ -57,70 +59,6 @@ interface NavbarProps {
   };
 }
 
-{/*
-      {
-      title: "Products",
-      url: "#",
-      items: [
-        {
-          title: "Blog",
-          description: "The latest industry news, updates, and info",
-          icon: <Book className="size-5 shrink-0" />,
-          url: "#",
-        },
-        {
-          title: "Company",
-          description: "Our mission is to innovate and empower the world",
-          icon: <Trees className="size-5 shrink-0" />,
-          url: "#",
-        },
-        {
-          title: "Careers",
-          description: "Browse job listing and discover our workspace",
-          icon: <Sunset className="size-5 shrink-0" />,
-          url: "#",
-        },
-        {
-          title: "Support",
-          description:
-            "Get in touch with our support team or visit our community forums",
-          icon: <Zap className="size-5 shrink-0" />,
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Resources",
-      url: "#",
-      items: [
-        {
-          title: "Help Center",
-          description: "Get all the answers you need right here",
-          icon: <Zap className="size-5 shrink-0" />,
-          url: "#",
-        },
-        {
-          title: "Contact Us",
-          description: "We are here to help you with any questions you have",
-          icon: <Sunset className="size-5 shrink-0" />,
-          url: "#",
-        },
-        {
-          title: "Status",
-          description: "Check the current status of our services and APIs",
-          icon: <Trees className="size-5 shrink-0" />,
-          url: "#",
-        },
-        {
-          title: "Terms of Service",
-          description: "Our terms and conditions for using our services",
-          icon: <Book className="size-5 shrink-0" />,
-          url: "#",
-        },
-      ],
-    },
-      */}
-
 const Navbar = ({
   logo = {
     url: "/",
@@ -133,7 +71,13 @@ const Navbar = ({
     {
       title: "Dashboard",
       url: "/dashboard",
-    }
+      authRequired: true,
+    },
+    {
+      title: "Documents",
+      url: "/documents",
+      authRequired: true,
+    },
   ],
   auth = {
     login: { title: "Login", url: "/login" },
@@ -141,6 +85,17 @@ const Navbar = ({
   },
   className,
 }: NavbarProps) => {
+  const { user, loading, signOut } = useAuth();
+
+  const filteredMenu = menu.filter(
+    (item) => !item.authRequired || user
+  );
+
+  const handleSignOut = async () => {
+    await signOut();
+    window.location.href = "/";
+  };
+
   return (
     <section className={cn("py-4", className)}>
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -157,18 +112,35 @@ const Navbar = ({
             <div className="flex items-center">
               <NavigationMenu>
                 <NavigationMenuList>
-                  {menu.map((item) => renderMenuItem(item))}
+                  {filteredMenu.map((item) => renderMenuItem(item))}
                 </NavigationMenuList>
               </NavigationMenu>
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2 pl-6">
-            <Button asChild variant="outline" size="sm">
-              <a href={auth.login.url}>{auth.login.title}</a>
-            </Button>
-            <Button asChild size="sm">
-              <a href={auth.signup.url}>{auth.signup.title}</a>
-            </Button>
+            {loading ? null : user ? (
+              <>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <User className="size-4" />
+                  <span className="max-w-32 truncate font-medium text-foreground">
+                    {user.displayName || user.email}
+                  </span>
+                </div>
+                <Button variant="outline" size="sm" onClick={handleSignOut}>
+                  <LogOut className="size-4" />
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button asChild variant="outline" size="sm">
+                  <a href={auth.login.url}>{auth.login.title}</a>
+                </Button>
+                <Button asChild size="sm">
+                  <a href={auth.signup.url}>{auth.signup.title}</a>
+                </Button>
+              </>
+            )}
             <ThemeToggle />
           </div>
         </nav>
@@ -201,16 +173,33 @@ const Navbar = ({
                     collapsible
                     className="flex w-full flex-col gap-4"
                   >
-                    {menu.map((item) => renderMobileMenuItem(item))}
+                    {filteredMenu.map((item) => renderMobileMenuItem(item))}
                   </Accordion>
 
                   <div className="flex flex-col gap-3">
-                    <Button asChild variant="outline">
-                      <a href={auth.login.url}>{auth.login.title}</a>
-                    </Button>
-                    <Button asChild>
-                      <a href={auth.signup.url}>{auth.signup.title}</a>
-                    </Button>
+                    {loading ? null : user ? (
+                      <>
+                        <div className="flex items-center gap-2 text-sm">
+                          <User className="size-4" />
+                          <span className="font-medium">
+                            {user.displayName || user.email}
+                          </span>
+                        </div>
+                        <Button variant="outline" onClick={handleSignOut}>
+                          <LogOut className="size-4" />
+                          Logout
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button asChild variant="outline">
+                          <a href={auth.login.url}>{auth.login.title}</a>
+                        </Button>
+                        <Button asChild>
+                          <a href={auth.signup.url}>{auth.signup.title}</a>
+                        </Button>
+                      </>
+                    )}
                     <ThemeToggle />
                   </div>
                 </div>

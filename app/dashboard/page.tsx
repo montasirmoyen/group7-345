@@ -1,24 +1,42 @@
 "use client";
 
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
+import { useAuth } from "@/lib/auth-context";
 import { Dashboard } from "@/components/dashboard";
 import OnboardingFeed from "@/components/onboarding";
+import { Loader2 } from "lucide-react";
 
-export default function OnboardingFeedPage() {
-  const [isOnboardingDone, setIsOnboardingDone] = useState(false);
+export default function DashboardPage() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
 
-  if (isOnboardingDone) {
-    return <Dashboard />;
+  // If loading, show spinner
+  if (loading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="size-8 animate-spin text-muted-foreground" />
+      </div>
+    );
   }
 
-  return (
-    <div className="py-8 sm:py-16 lg:py-24">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-center">
-          <OnboardingFeed onContinue={() => setIsOnboardingDone(true)} />
+  // If not logged in, show onboarding which guides user to sign up
+  if (!user) {
+    return (
+      <div className="py-8 sm:py-16 lg:py-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-center">
+            <OnboardingFeed
+              onContinue={() => router.push("/register")}
+              onCancel={() => router.push("/")}
+            />
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  // User is logged in, show the actual dashboard
+  return <Dashboard />;
 }
