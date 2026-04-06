@@ -1,4 +1,4 @@
-import { Geist, Geist_Mono, Instrument_Sans } from "next/font/google"
+import { Geist_Mono, Instrument_Sans } from "next/font/google"
 
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/navbar";
 import Footer from "@/components/footer";
+import { AuthProvider } from "@/lib/auth-context";
 
 const instrumentSans = Instrument_Sans({ subsets: ['latin'], variable: '--font-sans' })
 
@@ -33,12 +34,14 @@ export default function RootLayout({
     >
       <body>
         <ThemeProvider>
-          <TooltipProvider>
-            <Navbar />
-            <main className="min-h-screen">{children}</main>
-            <Toaster />
-            <Footer />
-          </TooltipProvider>
+          <AuthProvider>
+            <TooltipProvider>
+              <Navbar />
+              <main className="min-h-screen">{children}</main>
+              <Toaster />
+              <Footer />
+            </TooltipProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

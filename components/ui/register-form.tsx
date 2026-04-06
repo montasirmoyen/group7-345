@@ -1,26 +1,103 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 
-import { EyeIcon, EyeOffIcon } from 'lucide-react'
+import { EyeIcon, EyeOffIcon, Loader2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useAuth } from '@/lib/auth-context'
 
 const RegisterForm = () => {
+  const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
   const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false)
+  const [error, setError] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const { signUp } = useAuth()
+  const router = useRouter()
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+
+    if (!username.trim()) {
+      setError('Please enter a username.')
+      return
+    }
+
+    if (!email.trim()) {
+      setError('Please enter your email address.')
+      return
+    }
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long.')
+      return
+    }
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.')
+      return
+    }
+
+    if (!agreedToTerms) {
+      setError('You must agree to the privacy policy & terms.')
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      await signUp(email, password, username)
+      router.push('/dashboard')
+    } catch (err: unknown) {
+      const firebaseError = err as { code?: string }
+      switch (firebaseError.code) {
+        case 'auth/email-already-in-use':
+          setError('An account with this email already exists.')
+          break
+        case 'auth/invalid-email':
+          setError('Please enter a valid email address.')
+          break
+        case 'auth/weak-password':
+          setError('Password is too weak. Please use at least 6 characters.')
+          break
+        default:
+          setError('An error occurred. Please try again.')
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   return (
-    <form className='space-y-4' onSubmit={e => e.preventDefault()}>
+    <form className='space-y-4' onSubmit={handleSubmit}>
+      {error && (
+        <div className='rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive'>
+          {error}
+        </div>
+      )}
+
       {/* Username */}
       <div className='space-y-1'>
         <Label className='leading-5' htmlFor='username'>
           Username
         </Label>
-        <Input type='text' id='username' placeholder='Enter your username' />
+        <Input
+          type='text'
+          id='username'
+          placeholder='Enter your username'
+          value={username}
+          onChange={e => setUsername(e.target.value)}
+          disabled={isLoading}
+        />
       </div>
 
       {/* Email */}
@@ -28,7 +105,14 @@ const RegisterForm = () => {
         <Label className='leading-5' htmlFor='userEmail'>
           Email address
         </Label>
-        <Input type='email' id='userEmail' placeholder='Enter your email address' />
+        <Input
+          type='email'
+          id='userEmail'
+          placeholder='Enter your email address'
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          disabled={isLoading}
+        />
       </div>
 
       {/* Password */}
@@ -42,10 +126,14 @@ const RegisterForm = () => {
             type={isPasswordVisible ? 'text' : 'password'}
             placeholder='••••••••••••••••'
             className='pr-9'
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            disabled={isLoading}
           />
           <Button
             variant='ghost'
             size='icon'
+            type='button'
             onClick={() => setIsPasswordVisible(prevState => !prevState)}
             className='text-muted-foreground focus-visible:ring-ring/50 absolute inset-y-0 right-0 rounded-l-none hover:bg-transparent'
           >
@@ -66,29 +154,49 @@ const RegisterForm = () => {
             type={isConfirmPasswordVisible ? 'text' : 'password'}
             placeholder='••••••••••••••••'
             className='pr-9'
+            value={confirmPassword}
+            onChange={e => setConfirmPassword(e.target.value)}
+            disabled={isLoading}
           />
           <Button
             variant='ghost'
             size='icon'
+            type='button'
             onClick={() => setIsConfirmPasswordVisible(prevState => !prevState)}
             className='text-muted-foreground focus-visible:ring-ring/50 absolute inset-y-0 right-0 rounded-l-none hover:bg-transparent'
           >
             {isConfirmPasswordVisible ? <EyeOffIcon /> : <EyeIcon />}
-            <span className='sr-only'>{isConfirmPasswordVisible ? 'Hide password' : 'Show password'}</span>
+            <span className='sr-only'>
+              {isConfirmPasswordVisible ? 'Hide password' : 'Show password'}
+            </span>
           </Button>
         </div>
       </div>
 
       {/* Privacy policy */}
       <div className='flex items-center gap-3'>
-        <Checkbox id='rememberMe' className='size-6' />
-        <Label htmlFor='rememberMe'>
-          <span className='text-muted-foreground'>I agree to the</span><a href='#'>privacy policy & terms</a>
+        <Checkbox
+          id='agreeTerms'
+          className='size-6'
+          checked={agreedToTerms}
+          onCheckedChange={checked => setAgreedToTerms(checked === true)}
+          disabled={isLoading}
+        />
+        <Label htmlFor='agreeTerms'>
+          <span className='text-muted-foreground'>I agree to the </span>
+          <a href='#'>privacy policy & terms</a>
         </Label>
       </div>
 
-      <Button className='w-full' type='submit'>
-        Sign Up
+      <Button className='w-full' type='submit' disabled={isLoading}>
+        {isLoading ? (
+          <>
+            <Loader2 className='size-4 animate-spin' />
+            Creating account...
+          </>
+        ) : (
+          'Sign Up'
+        )}
       </Button>
     </form>
   )
