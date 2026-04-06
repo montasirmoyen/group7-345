@@ -27,6 +27,7 @@ import {
 import { ThemeToggle } from "@/components/ui/theme-toggle"
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
+import { useRouter } from "next/navigation";
 
 interface MenuItem {
   title: string;
@@ -86,6 +87,7 @@ const Navbar = ({
   className,
 }: NavbarProps) => {
   const { user, loading, signOut } = useAuth();
+  const router = useRouter();
 
   const filteredMenu = menu.filter(
     (item) => !item.authRequired || user
@@ -93,7 +95,8 @@ const Navbar = ({
 
   const handleSignOut = async () => {
     await signOut();
-    window.location.href = "/";
+    // Use Next.js router to avoid a full page reload (maintains SPA state)
+    router.push("/");
   };
 
   return (
