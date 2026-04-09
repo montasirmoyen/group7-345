@@ -20,6 +20,14 @@ export type ApplicationStatus =
   | "offer"
   | "rejected";
 
+export type ContactInfo = {
+  name: string;
+  email: string;
+  phoneNumber: string;
+  company: string;
+  linkedInProfile: string;
+};
+
 export type JobApplication = {
   id: string;
   companyName: string;
@@ -29,6 +37,7 @@ export type JobApplication = {
   location: string;
   salary: string;
   notes: string;
+  contactInfo: ContactInfo;
 };
 
 export type ApplicationFormData = Omit<JobApplication, "id">;
@@ -99,6 +108,13 @@ export function subscribeToApplications(
       location: doc.data().location ?? "",
       salary: doc.data().salary ?? "",
       notes: doc.data().notes ?? "",
+      contactInfo: {
+        name: doc.data().contactInfo?.name ?? "",
+        email: doc.data().contactInfo?.email ?? "",
+        phoneNumber: doc.data().contactInfo?.phoneNumber ?? "",
+        company: doc.data().contactInfo?.company ?? "",
+        linkedInProfile: doc.data().contactInfo?.linkedInProfile ?? "",
+      },
     }));
     callback(applications);
   });
