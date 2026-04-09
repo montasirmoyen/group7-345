@@ -20,6 +20,7 @@ const RegisterForm = () => {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
   const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false)
   const [error, setError] = useState('')
+  const [message, setMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const { signUp } = useAuth()
   const router = useRouter()
@@ -27,6 +28,7 @@ const RegisterForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    setMessage('')
 
     if (!username.trim()) {
       setError('Please enter a username.')
@@ -56,7 +58,8 @@ const RegisterForm = () => {
     setIsLoading(true)
     try {
       await signUp(email, password, username)
-      router.push('/dashboard')
+      setMessage('Account created. Please verify your email before logging in.')
+      router.push('/login?verifyEmail=1')
     } catch (err: unknown) {
       const firebaseError = err as { code?: string }
       switch (firebaseError.code) {
@@ -82,6 +85,11 @@ const RegisterForm = () => {
       {error && (
         <div className='rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive'>
           {error}
+        </div>
+      )}
+      {message && (
+        <div className='rounded-md bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-300'>
+          {message}
         </div>
       )}
 
