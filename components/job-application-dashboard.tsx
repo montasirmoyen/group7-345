@@ -120,6 +120,10 @@ export function JobApplicationDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<ApplicationStatus | "all">("all");
+  const [locationFilter, setLocationFilter] = useState("");
+
   // Subscribe to applications from Firestore
   useEffect(() => {
     if (!user) return;
@@ -162,6 +166,24 @@ export function JobApplicationDashboard() {
       offerCount,
     };
   }, [applications]);
+
+  const filteredApplications = useMemo(() => {
+  return applications.filter((app) => {
+    const matchesSearch =
+      searchQuery === "" ||
+      app.companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      app.jobTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      app.notes.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesStatus = statusFilter === "all" || app.status === statusFilter;
+
+    const matchesLocation =
+      locationFilter === "" ||
+      app.location.toLowerCase().includes(locationFilter.toLowerCase());
+
+    return matchesSearch && matchesStatus && matchesLocation;
+  });
+}, [applications, searchQuery, statusFilter, locationFilter]);
 
   const resetForm = () => {
     setForm({ ...emptyForm, applicationDate: getTodayDate() });
@@ -408,9 +430,39 @@ export function JobApplicationDashboard() {
             <CardDescription>
               Edit details, change status directly, or remove entries from your pipeline.
             </CardDescription>
+            <div className="flex flex-col gap-2 pt-2 sm:flex-row">
+                  <Input
+                  placeholder="Search by company, title, or keyword.."
+                  value = {searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="sm:max-w-xs"
+                  />
+                  <Select
+                    value={statusFilter}
+                    onValueChange={(value) => setStatusFilter(value as ApplicationStatus | "all")}
+                    >
+                      <SelectTrigger className="sm:max-w-[160px]">
+                          <SelectValue placeholder="Filter by status" />
+                      </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value ="all">All Statuses</SelectItem>
+                      {statusColumns.map((status) => (
+                        <SelectItem key = {status.id} value = {status.id}>
+                          {status.name}
+                          </SelectItem>
+                      ))}
+                    </SelectContent>
+                    </Select>
+                    <Input
+                    placeholder="Filter by location.."
+                    value={locationFilter}
+                    onChange={(e) => setLocationFilter(e.target.value)}
+                    className="sm:max-w-xs"
+                    />
+            </div>
           </CardHeader>
           <CardContent className="space-y-3">
-            {applications.map((application) => {
+            {filteredApplications.map((application) => {
               const linkedDocs = getLinkedDocuments(application.id);
               return (
                 <div
@@ -484,9 +536,11 @@ export function JobApplicationDashboard() {
                 </div>
               );
             })}
-            {applications.length === 0 && (
+            {filteredApplications.length === 0 && (
               <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
-                No applications yet. Create your first entry to start tracking progress.
+                {applications.length === 0
+                ? "No applications yet. Create your first entry to start tracking progress."
+                : "No applications match your filters."}
               </div>
             )}
           </CardContent>
