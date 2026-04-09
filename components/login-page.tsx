@@ -1,6 +1,6 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 import { Loader2 } from 'lucide-react'
 import { useState } from 'react'
@@ -15,6 +15,8 @@ import LoginForm from '@/components/ui/login-form'
 const Login = () => {
   const { signInWithGoogle } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const shouldShowVerifyBanner = searchParams.get('verifyEmail') === '1'
   const [googleLoading, setGoogleLoading] = useState(false)
   const [googleError, setGoogleError] = useState('')
 
@@ -43,6 +45,11 @@ const Login = () => {
         <CardContent>
           {/* Login Form */}
           <div className='space-y-4'>
+            {shouldShowVerifyBanner && (
+              <div className='rounded-md bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-300'>
+                We sent a verification email. Verify your email before accessing protected pages.
+              </div>
+            )}
             <LoginForm />
 
             <p className='text-muted-foreground text-center'>
