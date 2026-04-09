@@ -1,11 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 
 import { useAuth } from "@/lib/auth-context";
 import { Dashboard } from "@/components/dashboard";
 import OnboardingFeed from "@/components/onboarding";
+import { EmailVerificationGate } from "@/components/email-verification-gate";
 import { Loader2 } from "lucide-react";
 
 export default function DashboardPage() {
@@ -35,6 +35,14 @@ export default function DashboardPage() {
         </div>
       </div>
     );
+  }
+
+  const isPasswordProviderUser = user.providerData.some(
+    (provider) => provider.providerId === "password"
+  );
+
+  if (isPasswordProviderUser && !user.emailVerified) {
+    return <EmailVerificationGate title="Verify your email to access dashboard" />;
   }
 
   // User is logged in, show the actual dashboard
