@@ -54,6 +54,7 @@ import {
   type ApplicationStatus,
   type JobApplication,
   type ApplicationFormData,
+  type ContactInfo,
   addApplication,
   updateApplication,
   deleteApplication,
@@ -99,6 +100,13 @@ const emptyForm: ApplicationForm = {
   location: "",
   salary: "",
   notes: "",
+  contactInfo: {
+    name: "",
+    email: "",
+    phoneNumber: "",
+    company: "",
+    linkedInProfile: "",
+  },
 };
 
 function getTodayDate() {
@@ -108,6 +116,10 @@ function getTodayDate() {
 function formatDisplayDate(value: string) {
   if (!value) return "N/A";
   return new Date(`${value}T00:00:00`).toLocaleDateString();
+}
+
+function hasContactInfo(contactInfo: ContactInfo) {
+  return Object.values(contactInfo).some((value) => value.trim().length > 0);
 }
 
 export function JobApplicationDashboard() {
@@ -205,6 +217,7 @@ export function JobApplicationDashboard() {
       location: application.location,
       salary: application.salary,
       notes: application.notes,
+      contactInfo: application.contactInfo,
     });
     setDialogOpen(true);
   };
@@ -218,6 +231,19 @@ export function JobApplicationDashboard() {
 
   const updateField = <K extends keyof ApplicationForm>(field: K, value: ApplicationForm[K]) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const updateContactField = <K extends keyof ContactInfo>(
+    field: K,
+    value: ContactInfo[K]
+  ) => {
+    setForm((prev) => ({
+      ...prev,
+      contactInfo: {
+        ...prev.contactInfo,
+        [field]: value,
+      },
+    }));
   };
 
   const handleSubmit = async () => {
@@ -248,6 +274,23 @@ export function JobApplicationDashboard() {
       await deleteApplication(user.uid, id);
     } catch (error) {
       console.error("Failed to delete application:", error);
+    }
+  };
+
+  const handleDeleteContact = async (id: string) => {
+    if (!user) return;
+    try {
+      await updateApplication(user.uid, id, {
+        contactInfo: {
+          name: "",
+          email: "",
+          phoneNumber: "",
+          company: "",
+          linkedInProfile: "",
+        },
+      });
+    } catch (error) {
+      console.error("Failed to delete contact information:", error);
     }
   };
 
@@ -403,6 +446,12 @@ export function JobApplicationDashboard() {
                                   </p>
                                   <p>{application.location || "Location pending"}</p>
                                   <p>{application.salary || "Salary not specified"}</p>
+                                  {hasContactInfo(application.contactInfo) && (
+                                    <p className="line-clamp-2">
+                                      Contact: {application.contactInfo.name || "N/A"}
+                                      {application.contactInfo.email ? ` • ${application.contactInfo.email}` : ""}
+                                    </p>
+                                  )}
                                   <p className="line-clamp-2">{application.notes || "No notes yet"}</p>
                                   {linkedDocs.length > 0 && (
                                     <p className="flex items-center gap-1 text-primary">
@@ -441,7 +490,7 @@ export function JobApplicationDashboard() {
                     value={statusFilter}
                     onValueChange={(value) => setStatusFilter(value as ApplicationStatus | "all")}
                     >
-                      <SelectTrigger className="sm:max-w-[160px]">
+                      <SelectTrigger className="sm:max-w-40">
                           <SelectValue placeholder="Filter by status" />
                       </SelectTrigger>
                     <SelectContent>
@@ -475,6 +524,12 @@ export function JobApplicationDashboard() {
                     <p className="text-xs text-muted-foreground">
                       Applied on {formatDisplayDate(application.applicationDate)}
                     </p>
+                    {hasContactInfo(application.contactInfo) && (
+                      <p className="text-xs text-muted-foreground">
+                        Contact: {application.contactInfo.name || "N/A"}
+                        {application.contactInfo.email ? ` • ${application.contactInfo.email}` : ""}
+                      </p>
+                    )}
                   </div>
                   <div className="text-sm text-muted-foreground">
                     <p>{application.location || "No location"}</p>
@@ -507,6 +562,32 @@ export function JobApplicationDashboard() {
                       <Pencil className="size-4" />
                       Edit
                     </Button>
+                    {hasContactInfo(application.contactInfo) && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="outline" size="sm">
+                            Delete contact
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete contact information?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This removes recruiter or hiring manager details from this application only.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              variant="destructive"
+                              onClick={() => handleDeleteContact(application.id)}
+                            >
+                              Delete contact
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="destructive" size="sm">
@@ -630,6 +711,63 @@ export function JobApplicationDashboard() {
                 placeholder="Interview context, recruiter details, prep reminders"
                 value={form.notes}
                 onChange={(event) => updateField("notes", event.target.value)}
+                disabled={isSaving}
+              />
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <p className="text-sm font-medium">Contact information</p>
+              <p className="text-xs text-muted-foreground">
+                Add recruiter or hiring manager details for this application.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="contactName">Name</Label>
+              <Input
+                id="contactName"
+                placeholder="Jane Doe"
+                value={form.contactInfo.name}
+                onChange={(event) => updateContactField("name", event.target.value)}
+                disabled={isSaving}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="contactEmail">Email</Label>
+              <Input
+                id="contactEmail"
+                type="email"
+                placeholder="jane@company.com"
+                value={form.contactInfo.email}
+                onChange={(event) => updateContactField("email", event.target.value)}
+                disabled={isSaving}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="contactPhoneNumber">Phone Number</Label>
+              <Input
+                id="contactPhoneNumber"
+                placeholder="+1 (555) 123-4567"
+                value={form.contactInfo.phoneNumber}
+                onChange={(event) => updateContactField("phoneNumber", event.target.value)}
+                disabled={isSaving}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="contactCompany">Company</Label>
+              <Input
+                id="contactCompany"
+                placeholder="Acme Inc"
+                value={form.contactInfo.company}
+                onChange={(event) => updateContactField("company", event.target.value)}
+                disabled={isSaving}
+              />
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="contactLinkedInProfile">LinkedIn Profile</Label>
+              <Input
+                id="contactLinkedInProfile"
+                placeholder="https://www.linkedin.com/in/jane-doe"
+                value={form.contactInfo.linkedInProfile}
+                onChange={(event) => updateContactField("linkedInProfile", event.target.value)}
                 disabled={isSaving}
               />
             </div>
