@@ -16,13 +16,16 @@ const LoginForm = () => {
   const [password, setPassword] = useState('')
   const [isVisible, setIsVisible] = useState(false)
   const [error, setError] = useState('')
+  const [message, setMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const { signIn } = useAuth()
+  const [isSendingReset, setIsSendingReset] = useState(false)
+  const { signIn, sendPasswordReset } = useAuth()
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    setMessage('')
 
     if (!email.trim() || !password.trim()) {
       setError('Please enter your email and password.')
@@ -54,11 +57,46 @@ const LoginForm = () => {
     }
   }
 
+  const handleForgotPassword = async () => {
+    setError('')
+    setMessage('')
+
+    if (!email.trim()) {
+      setError('Enter your email above first, then click Forgot Password.')
+      return
+    }
+
+    setIsSendingReset(true)
+    try {
+      await sendPasswordReset(email.trim())
+      setMessage('If an account exists for this email, a password reset link has been sent.')
+    } catch (err: unknown) {
+      const firebaseError = err as { code?: string }
+      switch (firebaseError.code) {
+        case 'auth/invalid-email':
+          setError('Please enter a valid email address.')
+          break
+        case 'auth/too-many-requests':
+          setError('Too many reset attempts. Please try again later.')
+          break
+        default:
+          setError('Could not send reset email. Please try again.')
+      }
+    } finally {
+      setIsSendingReset(false)
+    }
+  }
+
   return (
     <form className='space-y-4' onSubmit={handleSubmit}>
       {error && (
         <div className='rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive'>
           {error}
+        </div>
+      )}
+      {message && (
+        <div className='rounded-md bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-300'>
+          {message}
         </div>
       )}
 
@@ -115,9 +153,15 @@ const LoginForm = () => {
           </Label>
         </div>
 
-        <a href='#' className='hover:underline'>
-          Forgot Password?
-        </a>
+        <Button
+          type='button'
+          variant='link'
+          className='h-auto p-0'
+          onClick={handleForgotPassword}
+          disabled={isLoading || isSendingReset}
+        >
+          {isSendingReset ? 'Sending reset link...' : 'Forgot Password?'}
+        </Button>
       </div>
 
       <Button className='w-full' type='submit' disabled={isLoading}>

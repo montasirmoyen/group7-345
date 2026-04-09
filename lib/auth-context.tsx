@@ -11,6 +11,8 @@ import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  sendEmailVerification,
+  sendPasswordResetEmail,
   signInWithPopup,
   signOut as firebaseSignOut,
   updateProfile,
@@ -29,6 +31,9 @@ type AuthContextType = {
   ) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
+  sendPasswordReset: (email: string) => Promise<void>;
+  resendEmailVerification: () => Promise<void>;
+  refreshUser: () => Promise<boolean>;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -36,6 +41,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [, setUserVersion] = useState(0);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
@@ -60,6 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password
     );
     await updateProfile(credential.user, { displayName });
+    await sendEmailVerification(credential.user);
   };
 
   const signInWithGoogle = async () => {
@@ -70,9 +77,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await firebaseSignOut(auth);
   };
 
+  const sendPasswordReset = async (email: string) => {
+    await sendPasswordResetEmail(auth, email);
+  };
+
+  const resendEmailVerification = async () => {
+    if (!auth.currentUser) {
+      throw new Error("No authenticated user found.");
+    }
+    await sendEmailVerification(auth.currentUser);
+  };
+
+  const refreshUser = async () => {
+    if (!auth.currentUser) {
+      return false;
+    }
+    await auth.currentUser.reload();
+    setUser(auth.currentUser);
+    // Force a rerender even if Firebase keeps the same object reference.
+    setUserVersion((prev) => prev + 1);
+    return auth.currentUser.emailVerified;
+  };
+
   return (
     <AuthContext.Provider
-      value={{ user, loading, signIn, signUp, signInWithGoogle, signOut }}
+      value={{
+        user,
+        loading,
+        signIn,
+        signUp,
+        signInWithGoogle,
+        signOut,
+        sendPasswordReset,
+        resendEmailVerification,
+        refreshUser,
+      }}
     >
       {children}
     </AuthContext.Provider>
