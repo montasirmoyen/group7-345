@@ -79,6 +79,11 @@ const Navbar = ({
       url: "/documents",
       authRequired: true,
     },
+    {
+      title: "Reminders",
+      url: "/reminders",
+      authRequired: true,
+    },
   ],
   auth = {
     login: { title: "Login", url: "/login" },

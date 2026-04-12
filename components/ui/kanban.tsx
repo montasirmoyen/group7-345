@@ -160,6 +160,7 @@ export const KanbanCards = <T extends KanbanItemProps = KanbanItemProps>({
   return (
     <ScrollArea className="overflow-hidden">
       <SortableContext items={items}>
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
         <div className={cn("flex flex-grow flex-col gap-2 p-2", className)} {...(props as any)}>
           {filteredData.map(children)}
         </div>
@@ -172,6 +173,7 @@ export const KanbanCards = <T extends KanbanItemProps = KanbanItemProps>({
 export type KanbanHeaderProps = HTMLAttributes<HTMLDivElement>
 
 export const KanbanHeader = ({ className, ...props }: KanbanHeaderProps) => (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   <div className={cn("m-0 p-2 font-semibold text-sm", className)} {...(props as any)} />
 )
 
@@ -306,7 +308,7 @@ export const KanbanProvider = <
         onDragOver={handleDragOver}
         onDragStart={handleDragStart}
         sensors={sensors}
-        {...(props as any)}
+        {...(props as any)} // eslint-disable-line @typescript-eslint/no-explicit-any
       >
         <div className={cn("grid size-full auto-cols-fr grid-flow-col gap-4", className)}>
           {columns.map(column => children(column))}
@@ -347,6 +349,7 @@ export function KanbanDemo() {
 
   // Prevent SSR to avoid dnd-kit hydration mismatch
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true)
   }, [])
 

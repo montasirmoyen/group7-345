@@ -100,6 +100,7 @@ const emptyForm: ApplicationForm = {
   location: "",
   salary: "",
   notes: "",
+  jobDescription: "",
   contactInfo: {
     name: "",
     email: "",
@@ -135,6 +136,7 @@ export function JobApplicationDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<ApplicationStatus | "all">("all");
   const [locationFilter, setLocationFilter] = useState("");
+  const [dateFromFilter, setDateFromFilter] = useState("");
 
   // Subscribe to applications from Firestore
   useEffect(() => {
@@ -180,22 +182,26 @@ export function JobApplicationDashboard() {
   }, [applications]);
 
   const filteredApplications = useMemo(() => {
-  return applications.filter((app) => {
-    const matchesSearch =
-      searchQuery === "" ||
-      app.companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      app.jobTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      app.notes.toLowerCase().includes(searchQuery.toLowerCase());
+    return applications.filter((app) => {
+      const matchesSearch =
+        searchQuery === "" ||
+        app.companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        app.jobTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        app.notes.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        app.jobDescription.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesStatus = statusFilter === "all" || app.status === statusFilter;
+      const matchesStatus = statusFilter === "all" || app.status === statusFilter;
 
-    const matchesLocation =
-      locationFilter === "" ||
-      app.location.toLowerCase().includes(locationFilter.toLowerCase());
+      const matchesLocation =
+        locationFilter === "" ||
+        app.location.toLowerCase().includes(locationFilter.toLowerCase());
 
-    return matchesSearch && matchesStatus && matchesLocation;
-  });
-}, [applications, searchQuery, statusFilter, locationFilter]);
+      const matchesDate =
+        dateFromFilter === "" || app.applicationDate >= dateFromFilter;
+
+      return matchesSearch && matchesStatus && matchesLocation && matchesDate;
+    });
+  }, [applications, searchQuery, statusFilter, locationFilter, dateFromFilter]);
 
   const resetForm = () => {
     setForm({ ...emptyForm, applicationDate: getTodayDate() });
@@ -217,6 +223,7 @@ export function JobApplicationDashboard() {
       location: application.location,
       salary: application.salary,
       notes: application.notes,
+      jobDescription: application.jobDescription,
       contactInfo: application.contactInfo,
     });
     setDialogOpen(true);
@@ -508,6 +515,13 @@ export function JobApplicationDashboard() {
                     onChange={(e) => setLocationFilter(e.target.value)}
                     className="sm:max-w-xs"
                     />
+                    <Input
+                    type="date"
+                    title="Filter from date"
+                    value={dateFromFilter}
+                    onChange={(e) => setDateFromFilter(e.target.value)}
+                    className="sm:max-w-xs"
+                    />
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -711,6 +725,17 @@ export function JobApplicationDashboard() {
                 placeholder="Interview context, recruiter details, prep reminders"
                 value={form.notes}
                 onChange={(event) => updateField("notes", event.target.value)}
+                disabled={isSaving}
+              />
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="jobDescription">Job Description</Label>
+              <Textarea
+                id="jobDescription"
+                placeholder="Paste the job posting here to preserve it for later reference..."
+                className="min-h-28"
+                value={form.jobDescription}
+                onChange={(event) => updateField("jobDescription", event.target.value)}
                 disabled={isSaving}
               />
             </div>

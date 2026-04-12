@@ -37,6 +37,7 @@ export type JobApplication = {
   location: string;
   salary: string;
   notes: string;
+  jobDescription: string;
   contactInfo: ContactInfo;
 };
 
@@ -108,6 +109,7 @@ export function subscribeToApplications(
       location: doc.data().location ?? "",
       salary: doc.data().salary ?? "",
       notes: doc.data().notes ?? "",
+      jobDescription: doc.data().jobDescription ?? "",
       contactInfo: {
         name: doc.data().contactInfo?.name ?? "",
         email: doc.data().contactInfo?.email ?? "",

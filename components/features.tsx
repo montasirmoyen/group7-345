@@ -1,9 +1,6 @@
 import type { ComponentType } from 'react'
 
-import { ArrowRightIcon } from 'lucide-react'
-
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 
 import { cn } from '@/lib/utils'
