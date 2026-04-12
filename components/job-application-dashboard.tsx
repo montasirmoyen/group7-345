@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, Loader2, Pencil, Plus, Trash2, TrendingUp, FileText } from "lucide-react";
+import { toast } from "sonner";
 
 import {
   AlertDialog,
@@ -127,6 +128,9 @@ export function JobApplicationDashboard() {
   const [applications, setApplications] = useState<JobApplication[]>([]);
   const [documents, setDocuments] = useState<DocumentMetadata[]>([]);
   const [form, setForm] = useState<ApplicationForm>({ ...emptyForm, applicationDate: getTodayDate() });
+  const [jobDescriptionUrl, setJobDescriptionUrl] = useState("");
+  const [isAutofilling, setIsAutofilling] = useState(false);
+  const [autofillMessage, setAutofillMessage] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -199,6 +203,8 @@ export function JobApplicationDashboard() {
 
   const resetForm = () => {
     setForm({ ...emptyForm, applicationDate: getTodayDate() });
+    setJobDescriptionUrl("");
+    setAutofillMessage(null);
     setEditingId(null);
   };
 
@@ -265,6 +271,63 @@ export function JobApplicationDashboard() {
       console.error("Failed to save application:", error);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleAutofillFromUrl = async () => {
+    if (!jobDescriptionUrl.trim()) {
+      setAutofillMessage("Paste a job description link first.");
+      return;
+    }
+
+    setIsAutofilling(true);
+    setAutofillMessage(null);
+
+    try {
+      const response = await fetch("/api/job-extract", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ url: jobDescriptionUrl.trim() }),
+      });
+
+      const payload = (await response.json()) as {
+        companyName?: string;
+        jobTitle?: string;
+        location?: string;
+        salary?: string;
+        extracted?: string[];
+        error?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(payload.error || "Could not extract details from this link.");
+      }
+
+      setForm((prev) => ({
+        ...prev,
+        companyName: payload.companyName || prev.companyName,
+        jobTitle: payload.jobTitle || prev.jobTitle,
+        location: payload.location || prev.location,
+        salary: payload.salary || prev.salary,
+      }));
+
+      const extractedCount = payload.extracted?.length ?? 0;
+      if (extractedCount > 0) {
+        setAutofillMessage(`Autofilled ${extractedCount} field${extractedCount === 1 ? "" : "s"} from the link.`);
+      } else {
+        setAutofillMessage("Link processed, but no matching details were found. You can fill fields manually.");
+      }
+    } catch (error) {
+      const message = error instanceof Error
+        ? error.message
+        : "Autofill failed. Please enter details manually.";
+
+      setAutofillMessage("Autofill failed. Please enter details manually.");
+      toast.error(message);
+    } finally {
+      setIsAutofilling(false);
     }
   };
 
@@ -636,6 +699,40 @@ export function JobApplicationDashboard() {
               Track company, role, status, and all supporting details in one place.
             </DialogDescription>
           </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="jobDescriptionLink">Job description link</Label>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Input
+                id="jobDescriptionLink"
+                type="url"
+                placeholder="https://company.com/careers/job-123"
+                value={jobDescriptionUrl}
+                onChange={(event) => setJobDescriptionUrl(event.target.value)}
+                disabled={isSaving || isAutofilling}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleAutofillFromUrl}
+                disabled={isSaving || isAutofilling}
+              >
+                {isAutofilling ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" />
+                    Extracting...
+                  </>
+                ) : (
+                  "Autofill"
+                )}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Paste a public job posting link to pre-fill company, title, location, and salary.
+            </p>
+            {autofillMessage && (
+              <p className="text-xs text-muted-foreground">{autofillMessage}</p>
+            )}
+          </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="companyName">Company name</Label>
