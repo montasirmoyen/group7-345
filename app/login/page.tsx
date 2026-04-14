@@ -1,9 +1,17 @@
 import Login from "@/components/login-page";
 
-export default function LogInPage() {
+type LoginPageProps = {
+  searchParams?: {
+    verifyEmail?: string;
+  };
+};
+
+export default function LogInPage({ searchParams }: LoginPageProps) {
+  const shouldShowVerifyBanner = searchParams?.verifyEmail === "1";
+
   return (
     <div>
-      <Login />
+      <Login shouldShowVerifyBanner={shouldShowVerifyBanner} />
     </div>
   );
 }

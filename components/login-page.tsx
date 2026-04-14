@@ -1,6 +1,6 @@
 'use client'
 
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 
 import { Loader2 } from 'lucide-react'
 import { useState } from 'react'
@@ -12,11 +12,13 @@ import { useAuth } from '@/lib/auth-context'
 
 import LoginForm from '@/components/ui/login-form'
 
-const Login = () => {
+type LoginProps = {
+  shouldShowVerifyBanner?: boolean
+}
+
+const Login = ({ shouldShowVerifyBanner = false }: LoginProps) => {
   const { signInWithGoogle } = useAuth()
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const shouldShowVerifyBanner = searchParams.get('verifyEmail') === '1'
   const [googleLoading, setGoogleLoading] = useState(false)
   const [googleError, setGoogleError] = useState('')
 
