@@ -63,20 +63,20 @@ const featuresList = [
 
 const testimonials: TestimonialItem[] = [
   {
+    name: 'Kanan Guliyev',
+    role: 'Founder & CEO',
+    company: 'JobCraftor Inc',
+    avatar: 'https://cdn.shadcnstudio.com/ss-assets/avatar/avatar-2.png?width=40&height=40&format=auto',
+    rating: 5,
+    content: "The Kanban board feature lets me visualize all my applications at a glance. I save hours every week compared to manual tracking."
+  },
+  {
     name: 'Zhipeng Huang',
     role: 'Software Engineer',
     company: 'ABC Corp',
     avatar: 'https://cdn.shadcnstudio.com/ss-assets/avatar/avatar-1.png?width=40&height=40&format=auto',
-    rating: 5,
-    content: "Job Application Tracker replaced our messy spreadsheets with a clean, structured workspace. Managing applications has never been easier."
-  },
-  {
-    name: 'Kanan Guliyev',
-    role: 'Product Manager',
-    company: 'XYZ Inc',
-    avatar: 'https://cdn.shadcnstudio.com/ss-assets/avatar/avatar-2.png?width=40&height=40&format=auto',
     rating: 4,
-    content: "The Kanban board feature lets me visualize all my applications at a glance. I save hours every week compared to manual tracking."
+    content: "Job Application Tracker replaced our messy spreadsheets with a clean, structured workspace. Managing applications has never been easier."
   },
   {
     name: 'Sarmad Shah',
