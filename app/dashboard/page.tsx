@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/lib/auth-context";
 import { Dashboard } from "@/components/dashboard";
+import { RemindersDashboard } from "@/components/ui/reminders-dashboard";
 import OnboardingFeed from "@/components/onboarding";
 import { EmailVerificationGate } from "@/components/email-verification-gate";
 import { Loader2 } from "lucide-react";
@@ -45,6 +46,11 @@ export default function DashboardPage() {
     return <EmailVerificationGate title="Verify your email to access dashboard" />;
   }
 
-  // User is logged in, show the actual dashboard
-  return <Dashboard />;
+  // User is logged in, show dashboard and reminders in one place
+  return (
+    <>
+      <Dashboard />
+      <RemindersDashboard />
+    </>
+  );
 }
