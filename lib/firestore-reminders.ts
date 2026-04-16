@@ -16,21 +16,27 @@ export type ReminderType =
   | "deadline"
   | "follow-up"
   | "thank-you"
-  | "interview";
-
-export type ReminderStatus = "upcoming" | "passed";
+  | "interview"
+  | "other";
 
 export type Reminder = {
   id: string;
-  title: string;
   type: ReminderType;
-  date: string;
+  message: string;
+  dueDate: string;
   applicationId: string;
-  applicationName: string;
-  notes: string;
+  completed: boolean;
 };
 
 export type ReminderFormData = Omit<Reminder, "id">;
+
+export const reminderTypeLabels: Record<ReminderType, string> = {
+  deadline: "Application Deadline",
+  "follow-up": "Follow-up",
+  "thank-you": "Thank-you Email",
+  interview: "Interview",
+  other: "Other",
+};
 
 function remindersCollection(uid: string) {
   return collection(db, "users", uid, "reminders");
@@ -73,24 +79,27 @@ export function subscribeToReminders(
   uid: string,
   callback: (reminders: Reminder[]) => void
 ): Unsubscribe {
-  const q = query(remindersCollection(uid), orderBy("createdAt", "desc"));
+  const q = query(remindersCollection(uid), orderBy("dueDate", "asc"));
   return onSnapshot(q, (snapshot) => {
-    const reminders: Reminder[] = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      title: doc.data().title ?? "",
-      type: doc.data().type ?? "follow-up",
-      date: doc.data().date ?? "",
-      applicationId: doc.data().applicationId ?? "",
-      applicationName: doc.data().applicationName ?? "",
-      notes: doc.data().notes ?? "",
+    const reminders: Reminder[] = snapshot.docs.map((d) => ({
+      id: d.id,
+      type: (d.data().type as ReminderType) ?? "other",
+      message: d.data().message ?? "",
+      dueDate: d.data().dueDate ?? "",
+      applicationId: d.data().applicationId ?? "",
+      completed: d.data().completed ?? false,
     }));
     callback(reminders);
   });
 }
 
-export function getReminderStatus(date: string): ReminderStatus {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const reminderDate = new Date(`${date}T00:00:00`);
-  return reminderDate < today ? "passed" : "upcoming";
+export function getReminderStatus(
+  dueDate: string,
+  completed: boolean
+): "completed" | "overdue" | "today" | "upcoming" {
+  if (completed) return "completed";
+  const today = new Date().toISOString().split("T")[0];
+  if (dueDate < today) return "overdue";
+  if (dueDate === today) return "today";
+  return "upcoming";
 }

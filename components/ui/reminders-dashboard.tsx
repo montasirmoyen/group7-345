@@ -10,6 +10,7 @@ import {
   Trash2,
   CheckCircle,
   AlertCircle,
+  Clock,
 } from "lucide-react";
 
 import {
@@ -56,6 +57,7 @@ import {
   type Reminder,
   type ReminderFormData,
   type ReminderType,
+  reminderTypeLabels,
   addReminder,
   updateReminder,
   deleteReminder,
@@ -74,7 +76,8 @@ const reminderTypes: Array<{ id: ReminderType; name: string }> = [
   { id: "deadline", name: "Application Deadline" },
   { id: "follow-up", name: "Follow-up" },
   { id: "thank-you", name: "Thank-you Email" },
-  { id: "interview", name: "Interview Date" },
+  { id: "interview", name: "Interview" },
+  { id: "other", name: "Other" },
 ];
 
 const reminderTypeBadgeClass: Record<ReminderType, string> = {
@@ -82,15 +85,15 @@ const reminderTypeBadgeClass: Record<ReminderType, string> = {
   "follow-up": "bg-blue-500/12 text-blue-700 dark:text-blue-300",
   "thank-you": "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300",
   interview: "bg-amber-500/12 text-amber-700 dark:text-amber-300",
+  other: "bg-muted text-foreground",
 };
 
 const emptyForm: ReminderFormData = {
-  title: "",
   type: "follow-up",
-  date: "",
+  message: "",
+  dueDate: "",
   applicationId: "",
-  applicationName: "",
-  notes: "",
+  completed: false,
 };
 
 function getTodayDate() {
@@ -106,15 +109,15 @@ export function RemindersDashboard() {
   const { user } = useAuth();
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [applications, setApplications] = useState<JobApplication[]>([]);
-  const [form, setForm] = useState<ReminderFormData>({ ...emptyForm, date: getTodayDate() });
+  const [form, setForm] = useState<ReminderFormData>({ ...emptyForm, dueDate: getTodayDate() });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-  emailjs.init(EMAILJS_PUBLIC_KEY);
-}, []);
+    emailjs.init(EMAILJS_PUBLIC_KEY);
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -134,62 +137,64 @@ export function RemindersDashboard() {
     return unsubscribe;
   }, [user]);
 
-  // Check for upcoming/passed reminders and send emails
+  // Email notifications
   useEffect(() => {
     if (!user?.email || reminders.length === 0) return;
-
     const sentKey = `reminder-emails-sent:${user.uid}`;
 
     reminders.forEach((reminder) => {
-        if (emailsSentThisSession.has(reminder.id)) return;
-        
-        const sentKey = `reminder-emails-sent:${user.uid}`;
-        const persisted: string[] = JSON.parse(localStorage.getItem(sentKey) ?? "[]");
-        if (persisted.includes(reminder.id)) return;
+      if (emailsSentThisSession.has(reminder.id)) return;
+      const persisted: string[] = JSON.parse(localStorage.getItem(sentKey) ?? "[]");
+      if (persisted.includes(reminder.id)) return;
 
-        const status = getReminderStatus(reminder.date);
-        const today = new Date().toISOString().split("T")[0];
-        const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
+      const status = getReminderStatus(reminder.dueDate, reminder.completed);
+      const today = getTodayDate();
+      const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
 
-        if (reminder.date === today || reminder.date === tomorrow || status === "passed") {
-            emailsSentThisSession.add(reminder.id); // block immediately
-            emailjs
-            .send(
-                EMAILJS_SERVICE_ID,
-                EMAILJS_TEMPLATE_ID,
-                {
-                to_email: user.email,
-                title: reminder.title,
-                type: reminderTypes.find((t) => t.id === reminder.type)?.name ?? reminder.type,
-                application_name: reminder.applicationName || "N/A",
-                date: formatDisplayDate(reminder.date),
-                notes: reminder.notes || "No notes",
-                },
-                EMAILJS_PUBLIC_KEY
-            )
-            .then(() => {
-                const current: string[] = JSON.parse(localStorage.getItem(sentKey) ?? "[]");
-                if (!current.includes(reminder.id)) {
-                localStorage.setItem(sentKey, JSON.stringify([...current, reminder.id]));
-                }
-            })
-            .catch((err) => console.error("EmailJS error:", err));
-        }
-        });
-  }, [reminders, user]);
+      if (reminder.dueDate === today || reminder.dueDate === tomorrow || status === "overdue") {
+        emailsSentThisSession.add(reminder.id);
+        emailjs
+          .send(
+            EMAILJS_SERVICE_ID,
+            EMAILJS_TEMPLATE_ID,
+            {
+              to_email: user.email,
+              title: reminder.message,
+              type: reminderTypeLabels[reminder.type],
+              application_name: applications.find((a) => a.id === reminder.applicationId)
+                ? `${applications.find((a) => a.id === reminder.applicationId)!.companyName} - ${applications.find((a) => a.id === reminder.applicationId)!.jobTitle}`
+                : "N/A",
+              date: formatDisplayDate(reminder.dueDate),
+              notes: "",
+            },
+            EMAILJS_PUBLIC_KEY
+          )
+          .then(() => {
+            const current: string[] = JSON.parse(localStorage.getItem(sentKey) ?? "[]");
+            if (!current.includes(reminder.id)) {
+              localStorage.setItem(sentKey, JSON.stringify([...current, reminder.id]));
+            }
+          })
+          .catch((err) => console.error("EmailJS error:", err));
+      }
+    });
+  }, [reminders, user, applications]);
 
   const upcomingCount = useMemo(
-    () => reminders.filter((r) => getReminderStatus(r.date) === "upcoming").length,
+    () => reminders.filter((r) => {
+      const s = getReminderStatus(r.dueDate, r.completed);
+      return s === "upcoming" || s === "today";
+    }).length,
     [reminders]
   );
 
   const passedCount = useMemo(
-    () => reminders.filter((r) => getReminderStatus(r.date) === "passed").length,
+    () => reminders.filter((r) => getReminderStatus(r.dueDate, r.completed) === "overdue").length,
     [reminders]
   );
 
   const resetForm = () => {
-    setForm({ ...emptyForm, date: getTodayDate() });
+    setForm({ ...emptyForm, dueDate: getTodayDate() });
     setEditingId(null);
   };
 
@@ -201,12 +206,11 @@ export function RemindersDashboard() {
   const handleEditClick = (reminder: Reminder) => {
     setEditingId(reminder.id);
     setForm({
-      title: reminder.title,
       type: reminder.type,
-      date: reminder.date,
+      message: reminder.message,
+      dueDate: reminder.dueDate,
       applicationId: reminder.applicationId,
-      applicationName: reminder.applicationName,
-      notes: reminder.notes,
+      completed: reminder.completed,
     });
     setDialogOpen(true);
   };
@@ -223,18 +227,18 @@ export function RemindersDashboard() {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleApplicationSelect = (appId: string) => {
-    const app = applications.find((a) => a.id === appId);
-    setForm((prev) => ({
-      ...prev,
-      applicationId: appId,
-      applicationName: app ? `${app.companyName} - ${app.jobTitle}` : "",
-    }));
+  const handleToggleComplete = async (reminder: Reminder) => {
+    if (!user) return;
+    try {
+      await updateReminder(user.uid, reminder.id, { completed: !reminder.completed });
+    } catch (error) {
+      console.error("Failed to update reminder:", error);
+    }
   };
 
   const handleSubmit = async () => {
     if (!user) return;
-    if (!form.title.trim() || !form.date) return;
+    if (!form.message.trim() || !form.dueDate) return;
 
     setIsSaving(true);
     try {
@@ -274,7 +278,6 @@ export function RemindersDashboard() {
   return (
     <section className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
       <div className="space-y-6">
-        {/* Stats */}
         <Card>
           <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="space-y-1">
@@ -306,7 +309,7 @@ export function RemindersDashboard() {
               </Card>
               <Card size="sm" className="border border-border/70">
                 <CardContent className="pt-1">
-                  <p className="text-xs text-muted-foreground">Passed</p>
+                  <p className="text-xs text-muted-foreground">Overdue</p>
                   <p className="text-2xl font-semibold text-rose-600 dark:text-rose-400">
                     {passedCount}
                   </p>
@@ -316,17 +319,17 @@ export function RemindersDashboard() {
           </CardContent>
         </Card>
 
-        {/* Reminders List */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">All Reminders</CardTitle>
             <CardDescription>
-              Email notifications are sent automatically for reminders due today, tomorrow, or already passed.
+              Email notifications are sent automatically for reminders due today, tomorrow, or overdue.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {reminders.map((reminder) => {
-              const status = getReminderStatus(reminder.date);
+              const status = getReminderStatus(reminder.dueDate, reminder.completed);
+              const linkedApp = applications.find((a) => a.id === reminder.applicationId);
               return (
                 <div
                   key={reminder.id}
@@ -334,27 +337,35 @@ export function RemindersDashboard() {
                 >
                   <div>
                     <div className="flex items-center gap-2">
-                      <p className="font-medium">{reminder.title}</p>
-                      {status === "upcoming" ? (
-                        <CheckCircle className="size-4 text-emerald-500" />
-                      ) : (
-                        <AlertCircle className="size-4 text-rose-500" />
-                      )}
+                      <p className={`font-medium ${reminder.completed ? "line-through text-muted-foreground" : ""}`}>
+                        {reminder.message}
+                      </p>
+                      {status === "completed" && <CheckCircle className="size-4 text-emerald-500" />}
+                      {status === "overdue" && <AlertCircle className="size-4 text-rose-500" />}
+                      {status === "today" && <Clock className="size-4 text-amber-500" />}
+                      {status === "upcoming" && <CheckCircle className="size-4 text-emerald-500" />}
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {reminder.applicationName || "No application linked"}
+                      {linkedApp ? `${linkedApp.companyName} - ${linkedApp.jobTitle}` : "No application linked"}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {formatDisplayDate(reminder.date)}
+                      {formatDisplayDate(reminder.dueDate)}
                     </p>
                   </div>
                   <Badge className={reminderTypeBadgeClass[reminder.type]}>
-                    {reminderTypes.find((t) => t.id === reminder.type)?.name}
+                    {reminderTypeLabels[reminder.type]}
                   </Badge>
-                  <p className="line-clamp-2 text-sm text-muted-foreground">
-                    {reminder.notes || "No notes"}
-                  </p>
+                  <Badge variant="outline" className="w-fit">
+                    {status.charAt(0).toUpperCase() + status.slice(1)}
+                  </Badge>
                   <div className="flex items-center gap-2 lg:justify-end">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleToggleComplete(reminder)}
+                    >
+                      {reminder.completed ? "Undo" : "Complete"}
+                    </Button>
                     <Button variant="outline" size="sm" onClick={() => handleEditClick(reminder)}>
                       <Pencil className="size-4" />
                       Edit
@@ -370,7 +381,7 @@ export function RemindersDashboard() {
                         <AlertDialogHeader>
                           <AlertDialogTitle>Delete this reminder?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            This removes "{reminder.title}" from your reminders.
+                            This removes "{reminder.message}" from your reminders.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
@@ -397,7 +408,6 @@ export function RemindersDashboard() {
         </Card>
       </div>
 
-      {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
@@ -408,12 +418,12 @@ export function RemindersDashboard() {
           </DialogHeader>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="title">Reminder title</Label>
+              <Label htmlFor="message">Reminder message</Label>
               <Input
-                id="title"
+                id="message"
                 placeholder="Follow up with Google recruiter"
-                value={form.title}
-                onChange={(e) => updateField("title", e.target.value)}
+                value={form.message}
+                onChange={(e) => updateField("message", e.target.value)}
                 disabled={isSaving}
               />
             </div>
@@ -438,17 +448,17 @@ export function RemindersDashboard() {
             </div>
             <div className="space-y-2">
               <DatePickerInput
-                fieldLabel="Date"
-                id="date"
-                value={form.date}
-                onChange={(value) => updateField("date", value)}
+                fieldLabel="Due date"
+                id="dueDate"
+                value={form.dueDate}
+                onChange={(value) => updateField("dueDate", value)}
               />
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label>Linked application (optional)</Label>
               <Select
                 value={form.applicationId}
-                onValueChange={handleApplicationSelect}
+                onValueChange={(value) => updateField("applicationId", value)}
                 disabled={isSaving}
               >
                 <SelectTrigger className="w-full">
@@ -462,16 +472,6 @@ export function RemindersDashboard() {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-            <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="notes">Notes</Label>
-              <Textarea
-                id="notes"
-                placeholder="Any additional context..."
-                value={form.notes}
-                onChange={(e) => updateField("notes", e.target.value)}
-                disabled={isSaving}
-              />
             </div>
           </div>
           <DialogFooter>
